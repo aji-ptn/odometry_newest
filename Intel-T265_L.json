@@ -1,0 +1,17 @@
+{
+  "cameraName": "Intel-T265",
+  "cameraSensorWidth": 3,
+  "cameraSensorHeight": 3,
+  "iCx": 427,
+  "iCy": 394,
+  "ratio": 1,
+  "imageWidth": 848,
+  "imageHeight": 800,
+  "calibrationRatio": 1.68,
+  "parameter0": 0,
+  "parameter1": 0,
+  "parameter2": -24.964,
+  "parameter3": 38.2,
+  "parameter4": -16.956,
+  "parameter5": 183.42
+}
