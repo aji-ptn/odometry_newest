@@ -1,11 +1,12 @@
 import numpy as np
 import cv2
+
 # from main import Controller
 
 STAGE_FIRST_FRAME = 0
 STAGE_SECOND_FRAME = 1
 STAGE_DEFAULT_FRAME = 2
-kMinNumFeature = 1500
+kMinNumFeature = 2000
 
 lk_params = dict(winSize=(21, 21),
                  # maxLevel = 3,
@@ -22,7 +23,7 @@ def featureTracking(image_ref, image_cur, px_ref):
     return kp1, kp2
 
 
-class PinholeCamera(object):
+class Intrinsic_parameters(object):
     def __init__(self, width, height, fx, fy, cx, cy,
                  k1=0.0, k2=0.0, p1=0.0, p2=0.0, k3=0.0):
         self.width = width
@@ -44,16 +45,15 @@ class VisualOdometry(object):
         self.cam = parameters
         self.new_frame = None
         self.last_frame = None
+        self.absolute_scale = []
         self.cur_R = None
-        self.translation = None
+        self.cur_t = None
         self.px_ref = None
         self.px_cur = None
         self.focal = parameters.fx
         self.pp = (parameters.cx, parameters.cy)
         self.trueX, self.trueY, self.trueZ = 0, 0, 0
         self.detection()
-        # self.text = None
-        # self.detector = cv2.FastFeatureDetector_create(threshold=25, nonmaxSuppression=True)
         with open(annotations) as f:
             self.annotations = f.readlines()
 
@@ -63,7 +63,7 @@ class VisualOdometry(object):
             self.detector = cv2.FastFeatureDetector_create(threshold=25, nonmaxSuppression=True)
             self.text = "Fast tres 25"
         elif self.select_detector == 2:
-            self.detector = cv2.ORB_create()
+            self.detector = cv2.ORB_create(3000)
             self.text = "ORB"
         elif self.select_detector == 3:
             self.detector = cv2.xfeatures2d.SURF_create()
@@ -71,12 +71,12 @@ class VisualOdometry(object):
         elif self.select_detector == 4:
             self.detector = cv2.xfeatures2d.SIFT_create()
             self.text = "SIFT"
+        elif self.select_detector == 6:
+            self.detector = cv2.AKAZE_create()
+            self.text = "AKAZE"
         elif self.select_detector == 5:
             self.detector = cv2.KAZE_create()
             self.text = "Kaze"
-        elif self.select_detector == 6:
-            self.detector = cv2.AKAZE()
-            self.text = "AKAZE"
 
     def getAbsoluteScale(self, frame_id):
         ss = self.annotations[frame_id - 1].strip().split()
@@ -88,42 +88,55 @@ class VisualOdometry(object):
         y = float(ss[7])
         z = float(ss[11])
         self.trueX, self.trueY, self.trueZ = x, y, z
-        return np.sqrt((x - x_prev) * (x - x_prev) + (y - y_prev) * (y - y_prev) + (z - z_prev) * (z - z_prev))
+        scale = np.sqrt((x - x_prev) * (x - x_prev) + (y - y_prev) * (y - y_prev) + (z - z_prev) * (z - z_prev))
+        return x, y, z, scale
 
-    def processFirstFrame(self):
+    def processFirstFrame(self):  # first image process
         self.px_ref = self.detector.detect(self.new_frame)
-        print(len(self.px_ref))
+        # print("feature detection = " + str(len(self.px_ref)))
         self.px_ref = np.array([x.pt for x in self.px_ref], dtype=np.float32)
         self.frame_stage = 1
 
-    def processSecondFrame(self):
+    def processSecondFrame(self):  # second image process
         self.px_ref, self.px_cur = featureTracking(self.last_frame, self.new_frame, self.px_ref)
         E, mask = cv2.findEssentialMat(self.px_cur, self.px_ref, focal=self.focal, pp=self.pp, method=cv2.RANSAC,
                                        prob=0.999, threshold=1.0)
-        _, self.cur_R, self.translation, mask = cv2.recoverPose(E, self.px_cur, self.px_ref, focal=self.focal,
-                                                                pp=self.pp)
+        _, self.cur_R, self.cur_t, mask = cv2.recoverPose(E, self.px_cur, self.px_ref, focal=self.focal,
+                                                          pp=self.pp)
         self.frame_stage = 2
         self.px_ref = self.px_cur
-        print(len(self.px_cur))
+        # print("feature detection = " + (str(len(self.px_cur))))
 
     def processFrame(self, frame_id):
         self.px_ref, self.px_cur = featureTracking(self.last_frame, self.new_frame, self.px_ref)
         E, mask = cv2.findEssentialMat(self.px_cur, self.px_ref, focal=self.focal, pp=self.pp, method=cv2.RANSAC,
                                        prob=0.999, threshold=1.0)
+        print(mask)
         _, R, t, mask = cv2.recoverPose(E, self.px_cur, self.px_ref, focal=self.focal, pp=self.pp)
 
-        absolute_scale = self.getAbsoluteScale(frame_id)
-        if absolute_scale > 0.1:
-            self.translation = self.translation + absolute_scale * self.cur_R.dot(t)
+        # self.cur_R = R
+        # print(R)
+
+        # self.cur_t = t
+        # print(t)
+        self.trueX, self.trueY, self.trueZ, self.absolute_scale = self.getAbsoluteScale(frame_id)
+        # self.absolute.append(self.absolute_scale)
+        print(self.absolute_scale)
+
+        if self.absolute_scale:
+            self.cur_t = self.cur_t + self.absolute_scale * self.cur_R.dot(t)
+            # print(self.cur_t)
             self.cur_R = R.dot(self.cur_R)
+            # print(self.cur_R)
+
         if self.px_ref.shape[0] < kMinNumFeature:
             self.px_cur = self.detector.detect(self.new_frame)
             self.px_cur = np.array([x.pt for x in self.px_cur], dtype=np.float32)
         self.px_ref = self.px_cur
-        print(len(self.px_cur))
+        # print("feature detection = " + (str(len(self.px_cur))))
 
     def update(self, img, frame_id):
-        assert (img.ndim == 2 and img.shape[0] == self.cam.height and img.shape[
+        assert (img.shape[0] == self.cam.height and img.shape[
             1] == self.cam.width), "Frame: provided image " \
                                    "has not the same size " \
                                    "as the camera model " \
@@ -137,4 +150,3 @@ class VisualOdometry(object):
         elif self.frame_stage == 0:
             self.processFirstFrame()
         self.last_frame = self.new_frame
-

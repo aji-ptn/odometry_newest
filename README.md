@@ -20,7 +20,7 @@ This program can proses dataset from kitti or from fisheye
 ```
 python main.py
 ```
-![map](result.png)
+![map](result image/result.png)
 
 
 
