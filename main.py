@@ -12,7 +12,7 @@ class Controller():
     def __init__(self):
         # super().__init__(parent)
         # self.parent = parent
-        self.type_dataset = 1  # 1. kitti, 2. fisheye, image only on png please change manual.
+        self.type_dataset = 2  # 1. kitti, 2. fisheye, image only on png please change manual.
         self.detector = 1
         self.image_folder = None
         self.poses = None
@@ -52,7 +52,7 @@ class Controller():
             self.first_img = 1
 
         elif type_dataset == 2:  # Fisheye image (Realsense Camera)
-            # self.image_folder = '/home/aji/Documents/Dataset/moildataset/D16-straightline/Left/'
+            self.image_folder = '/home/aji/Documents/Dataset/moildataset/D16-straightline/Left/'
             # self.image_folder = "/home/aji/Documents/Dataset/moildataset/round-dataset/Left/"
 
             # self.image_folder = '/home/aji/Documents/Dataset/data_moil_0/dataset_outdoor/intelL/'
@@ -61,41 +61,41 @@ class Controller():
             # self.image_folder = '/home/aji/Documents/Dataset/data_moil_0/dataset_stright/intelL/'
             # self.image_folder = '/home/aji/Documents/Dataset/data_moil_0/dataset_stright/intelR/'
 
-            self.image_folder = '/home/aji/Documents/Dataset/data_moil_0/20_M_outdoor/intelL/'
-            # self.image_folder = '/home/aji/Documents/Dataset/data_moil_0/20_M_outdoor/intelR'
+            # self.image_folder = '/home/aji/Documents/Dataset/data_moil_0/20_M_outdoor/intelL/'
+            # self.image_folder = '/home/aji/Documents/Dataset/data_moil_0/20_M_outdoor/intelR/'
 
 
-            # self.poses = "/home/aji/Documents/Dataset/moildataset/D16-straightline/Poses/D16.txt"
+            self.poses = "/home/aji/Documents/Dataset/moildataset/D16-straightline/Poses/D16.txt"
             # self.poses = "/home/aji/Documents/Dataset/moildataset/round-dataset/pose/00.txt"
 
             # self.poses = '/home/aji/Documents/Dataset/data_moil_0/dataset_outdoor/poses.txt'
 
             # self.poses = '/home/aji/Documents/Dataset/data_moil_0/dataset_stright/poses.txt'
 
-            self.poses = "/home/aji/Documents/Dataset/data_moil_0/20_M_outdoor/poses_12.txt"
+            # self.poses = "/home/aji/Documents/Dataset/data_moil_0/20_M_outdoor/poses_12.txt"
 
 
-            # parameter = Intrinsic_parameters(848, 800, 616.8560, 293.032, 427, 394)  # left
-            parameter = Intrinsic_parameters(848, 800, 616.8560, 293.032, 431, 397)  # right
+            parameter = Intrinsic_parameters(848, 800, 616.8560, 293.032, 427, 394)  # left
+            # parameter = Intrinsic_parameters(848, 800, 616.8560, 293.032, 431, 397)  # right
             self.visual_odometry = VisualOdometry(parameter, self.poses)
             self.moildev = Moildev.Moildev("Intel-T265_L.json")
             self.img_id = 1
             # self.type_dataset = 2
 
         elif type_dataset == 3:  # WEB-Camera
-            # self.image_folder = '/home/aji/Documents/Dataset/data_moil_0/dataset_outdoor/webcam/'
-            self.image_folder = '/home/aji/Documents/Dataset/data_moil_0/dataset_stright/webcam/'
+            self.image_folder = '/home/aji/Documents/Dataset/data_moil_0/dataset_outdoor/webcam/'
+            # self.image_folder = '/home/aji/Documents/Dataset/data_moil_0/dataset_stright/webcam/'
 
             # self.image_folder = '/home/aji/Documents/Dataset/data_moil_0/20_M_outdoor/webcam/'
 
-            # self.poses = "/home/aji/Documents/Dataset/data_moil_0/dataset_outdoor/poses.txt"
-            self.poses = "/home/aji/Documents/Dataset/data_moil_0/dataset_stright/poses.txt"
+            self.poses = "/home/aji/Documents/Dataset/data_moil_0/dataset_outdoor/poses.txt"
+            # self.poses = "/home/aji/Documents/Dataset/data_moil_0/dataset_stright/poses.txt"
 
             # self.poses = "/home/aji/Documents/Dataset/data_moil_0/20_M_outdoor/poses_12.txt"
 
             self.parameter = "C.npz"
-            # parameter = Intrinsic_parameters(640.0, 480.0, 652.527,  651.7243, 316.6353, 240.90377)
-            parameter = Intrinsic_parameters(619.0, 463.0, 652.527, 651.7243, 316.6353, 240.90377)
+            parameter = Intrinsic_parameters(640.0, 480.0, 652.527,  651.7243, 316.6353, 240.90377)
+            # parameter = Intrinsic_parameters(619.0, 463.0, 652.527, 651.7243, 316.6353, 240.90377)
             self.visual_odometry = VisualOdometry(parameter, self.poses)
             self.img_id = 1
 
@@ -165,6 +165,7 @@ class Controller():
 
             # print("=====================================================================================")
             deviation_z = np.subtract(self.truepose_z, self.predict_z)
+
             error = (abs(deviation_z)/self.truepose_z) * 100
             absolute_scale.append(self.visual_odometry.absolute_scale)
             self.number_img.append(self.number + ".png")
@@ -174,24 +175,24 @@ class Controller():
                     'scale': absolute_scale, 'error': error}
             df = pd.DataFrame(dict)
             # saving the dataframe
-            df.to_csv('20_m/20_camstraight' + self.data_text + self.visual_odometry.text + '.csv', index=False)
+            df.to_csv('20_m/666 ' + self.data_text + self.visual_odometry.text + '.csv', index=False)
             # print("=====================================================================================")
 
         self.end = time.time()
         self.time_final = self.time_calculate(self.end, self.start)
-        # cv2.putText(self.traj, ("time: " + self.time_final + " seconds"), (20, 750), cv2.FONT_HERSHEY_PLAIN, 1,
-        #             (255, 255, 255), 1, 8)
+        cv2.putText(self.traj, ("time: " + self.time_final + " seconds"), (20, 750), cv2.FONT_HERSHEY_PLAIN, 1,
+                    (255, 255, 255), 1, 8)
         if self.type_dataset == 1:
-            cv2.imwrite('kitti/calculate/00_' + self.visual_odometry.text + "_1000.png", self.traj)
+            cv2.imwrite('kitti' + self.visual_odometry.text + ".png", self.traj)
         if self.type_dataset == 2:
-            cv2.imwrite('20_m/Right ' + self.visual_odometry.text + ".png", self.traj)
+            cv2.imwrite('realsense ' + self.visual_odometry.text + ".png", self.traj)
         elif self.type_dataset == 3:
             cv2.imwrite('20_m/logitec' + self.visual_odometry.text + ".png", self.traj)
         elif self.type_dataset == 4:
             cv2.imwrite('picamera/ ' + self.visual_odometry.text + " Turn-Left.png", self.traj)
         else:
             cv2.imwrite('result/ ' + self.visual_odometry.text + " Turn-Left.png", self.traj)
-        cv2.waitKey(0)
+        # cv2.waitKey(0)
 
     # def err
 
@@ -252,7 +253,7 @@ class Controller():
             scale = 1  # scale your image trajectory
             draw_x, draw_y, draw_z = draw_x, draw_y * -1, draw_z * -1
             cv2.circle(self.traj, (int(true_x * scale) + 290, int(true_z * scale) + 290), 1, (255, 255, 255),
-                       3)  # original
+                       1)  # original
             cv2.circle(self.traj, (int(draw_x * scale) + 290, int(draw_z * scale) + 290), 1, (0, 0, 255), 1)  # odometry
 
             # Direction

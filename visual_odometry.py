@@ -111,7 +111,7 @@ class VisualOdometry(object):
         self.px_ref, self.px_cur = featureTracking(self.last_frame, self.new_frame, self.px_ref)
         E, mask = cv2.findEssentialMat(self.px_cur, self.px_ref, focal=self.focal, pp=self.pp, method=cv2.RANSAC,
                                        prob=0.999, threshold=1.0)
-        print(mask)
+        # print(mask)
         _, R, t, mask = cv2.recoverPose(E, self.px_cur, self.px_ref, focal=self.focal, pp=self.pp)
 
         # self.cur_R = R
@@ -123,7 +123,7 @@ class VisualOdometry(object):
         # self.absolute.append(self.absolute_scale)
         print(self.absolute_scale)
 
-        if self.absolute_scale:
+        if self.absolute_scale > 0.1:
             self.cur_t = self.cur_t + self.absolute_scale * self.cur_R.dot(t)
             # print(self.cur_t)
             self.cur_R = R.dot(self.cur_R)
