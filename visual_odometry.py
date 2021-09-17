@@ -1,3 +1,7 @@
+# Writer : Aji Pamungkas
+# github: @aji-ptn
+
+
 import numpy as np
 import cv2
 

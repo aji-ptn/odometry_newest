@@ -1,3 +1,7 @@
+# writer : Aji Pamungkas
+# github : @aji-ptn
+
+
 import numpy as np
 import cv2
 import Moildev
@@ -10,8 +14,6 @@ import csv
 
 class Controller():
     def __init__(self):
-        # super().__init__(parent)
-        # self.parent = parent
         self.type_dataset = 2  # 1. kitti, 2. fisheye, image only on png please change manual.
         self.detector = 1
         self.image_folder = None
