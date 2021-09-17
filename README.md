@@ -38,7 +38,7 @@ git clone https://github.com/aji-ptn/odometry_newest.git
   ```buildoutcfg
   self.type_dataset = 2
   ```
-  ![](asset/type dataset.png)
+  ![](asset/type_dataset.png)
 
 
 - change image directory and pose directory from your computer
@@ -48,7 +48,7 @@ git clone https://github.com/aji-ptn/odometry_newest.git
 ```
 python main.py
 ```
-![img](kitti/00 Fast tres 25.png)
+![img](kitti/00_Fast_tres_25.png)
 ### 4. Usage Feature Detection
 ![](asset/feature.png)
 
