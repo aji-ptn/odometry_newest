@@ -48,7 +48,7 @@ git clone https://github.com/aji-ptn/odometry_newest.git
 python main.py
 ```
 ![img](kitti/00 Fast tres 25.png)
-### 4. Usage Dataset
+### 4. Usage Feature Detection
 ![](asset/feature.png)
 
 
