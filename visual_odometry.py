@@ -49,7 +49,8 @@ class VisualOdometry(object):
         self.cam = parameters
         self.new_frame = None
         self.last_frame = None
-        self.absolute_scale = []
+        self.scale_3D = []
+        self.scale_2D = []
         self.cur_R = None
         self.cur_t = None
         self.px_ref = None
@@ -62,7 +63,7 @@ class VisualOdometry(object):
             self.annotations = f.readlines()
 
     def detection(self):
-        self.select_detector = 1
+        self.select_detector = 3
         if self.select_detector == 1:
             self.detector = cv2.FastFeatureDetector_create(threshold=25, nonmaxSuppression=True)
             self.text = "Fast tres 25"
@@ -83,17 +84,23 @@ class VisualOdometry(object):
             self.text = "Kaze"
 
     def getAbsoluteScale(self, frame_id):
-        ss = self.annotations[frame_id - 1].strip().split()
-        x_prev = float(ss[3])
-        y_prev = float(ss[7])
-        z_prev = float(ss[11])
+        if frame_id <= 2:
+            x_prev = 0
+            y_prev = 0
+            z_prev = 0
+        else:
+            ss = self.annotations[frame_id - 1].strip().split()
+            x_prev = float(ss[3])
+            y_prev = float(ss[7])
+            z_prev = float(ss[11])
         ss = self.annotations[frame_id].strip().split()
         x = float(ss[3])
         y = float(ss[7])
         z = float(ss[11])
         self.trueX, self.trueY, self.trueZ = x, y, z
-        scale = np.sqrt((x - x_prev) * (x - x_prev) + (y - y_prev) * (y - y_prev) + (z - z_prev) * (z - z_prev))
-        return x, y, z, scale
+        scale_3D = np.sqrt((x - x_prev) * (x - x_prev) + (y - y_prev) * (y - y_prev) + (z - z_prev) * (z - z_prev))
+        scale_2D = np.sqrt((x - x_prev) * (x - x_prev) + (z - z_prev) * (z - z_prev))
+        return x, y, z, scale_3D, scale_2D
 
     def processFirstFrame(self):  # first image process
         self.px_ref = self.detector.detect(self.new_frame)
@@ -123,12 +130,12 @@ class VisualOdometry(object):
 
         # self.cur_t = t
         # print(t)
-        self.trueX, self.trueY, self.trueZ, self.absolute_scale = self.getAbsoluteScale(frame_id)
+        self.trueX, self.trueY, self.trueZ, self.scale_3D, self.scale_2D = self.getAbsoluteScale(frame_id)
         # self.absolute.append(self.absolute_scale)
-        print(self.absolute_scale)
+        # print(self.scale_2D)
 
-        if self.absolute_scale > 0.1:
-            self.cur_t = self.cur_t + self.absolute_scale * self.cur_R.dot(t)
+        if self.scale_2D > 0.1:
+            self.cur_t = self.cur_t + self.scale_2D * self.cur_R.dot(t)
             # print(self.cur_t)
             self.cur_R = R.dot(self.cur_R)
             # print(self.cur_R)

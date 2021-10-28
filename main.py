@@ -14,7 +14,7 @@ import csv
 
 class Controller():
     def __init__(self):
-        self.type_dataset = 2  # 1. kitti, 2. fisheye, image only on png please change manual.
+        self.type_dataset = 1  # 1. kitti, 2. fisheye, image only on png please change manual.
         self.detector = 1
         self.image_folder = None
         self.poses = None
@@ -116,12 +116,18 @@ class Controller():
         return parameter, self.visual_odometry, self.image_folder
 
     def main(self):
-        absolute_scale=[]
+        cal_scale_pre_2D = 0
+        cal_scale_pre_3D = 0
+        absolute_scale_3D = []
+        absolute_scale_2D = []
+        scale_predict_2D = []
+        scale_predict_3D = []
+        scale_error_2D = []
         self.count_file = len(
             [name for name in os.listdir(self.image)]) - self.first_img  # if your data start by 0 (-1) else 0
         # print("totals image is " + str(self.count_file))
         self.start = time.time()
-        while self.img_id <= self.count_file:
+        while self.img_id <= 999:
             print("===============================================================")
             if self.type_dataset == 1:  # Kitti dataset
                 self.number = str(self.img_id).zfill(6)
@@ -166,18 +172,41 @@ class Controller():
             self.drawing(draw_x, draw_y, draw_z, true_x, true_y, true_z)
 
             # print("=====================================================================================")
-            deviation_z = np.subtract(self.truepose_z, self.predict_z)
+            # print(self.img_id)
+            # print(self.img_id-1)
+            if self.img_id-1 > 1:  # start from index image 2
+                cal_scale_pre_2D = np.sqrt((self.predict_x[-1] - self.predict_x[-2]) * (self.predict_x[-1] - self.predict_x[-2]) + (self.predict_z[-1] - self.predict_z[-2]) * (self.predict_z[-1] - self.predict_z[-2]))
+                cal_scale_pre_3D = np.sqrt((self.predict_x[-1] - self.predict_x[-2]) * (self.predict_x[-1] - self.predict_x[-2]) + (self.predict_z[-1] - self.predict_z[-2]) * (self.predict_z[-1] - self.predict_z[-2]) + (self.predict_y[-1] - self.predict_y[-2]) * (self.predict_y[-1] - self.predict_y[-2]))
+            scale_predict_2D.append(cal_scale_pre_2D)
+            print(cal_scale_pre_2D)
+            scale_predict_3D.append(cal_scale_pre_3D)
 
-            error = (abs(deviation_z)/self.truepose_z) * 100
-            absolute_scale.append(self.visual_odometry.absolute_scale)
+            # calculate deviation value
+            deviation_z = np.subtract(self.truepose_z, self.predict_z)
+            deviation_x = np.subtract(self.truepose_x, self.predict_x)
+
+            # print(scale_predict_2D)
+
+            error_z = (abs(deviation_z)/self.truepose_z) * 100
+            error_x = (abs(deviation_x)/self.truepose_x) * 100
+            # print(error_x)
+            absolute_scale_2D.append(self.visual_odometry.scale_2D)
+            print(self.visual_odometry.scale_2D)
+            scale_error = (abs(np.subtract(self.visual_odometry.scale_2D, cal_scale_pre_2D))/self.visual_odometry.scale_2D) * 100
+            scale_error_2D.append(scale_error)
+            # print(scale_error)
+            print(absolute_scale_2D)
+            absolute_scale_3D.append(self.visual_odometry.scale_3D)
             self.number_img.append(self.number + ".png")
             self.index.append(self.img_id-1)
-            dict = {'name': self.index, 'image': self.number_img, 'original pose': self.truepose_z, 'odometry':
-                self.predict_z, "deviation (original - odometry)": deviation_z, 'deviation': abs(deviation_z),
-                    'scale': absolute_scale, 'error': error}
+            dict = {'name': self.index, 'image': self.number_img,
+                    'ori scale 2D': absolute_scale_2D, 'VO scale_2D': scale_predict_2D, 'error scale 2D (%)': scale_error_2D,
+                    'ori scale 3D': absolute_scale_3D, 'VO scale_3D': absolute_scale_3D,
+                    'original pose Z': self.truepose_z, 'Visual odometry Z (m)': self.predict_z, "absolute deviation Z (m)": abs(deviation_z), 'error_Z (%)': abs(error_z),
+                    'original pose X': self.truepose_x, 'visual odometry X (m)': self.predict_x, "absolute deviation X (m)": abs(deviation_x), 'error_X (%)': abs(error_x)}
             df = pd.DataFrame(dict)
             # saving the dataframe
-            df.to_csv('20_m/666 ' + self.data_text + self.visual_odometry.text + '.csv', index=False)
+            df.to_csv('test_data/1000 ' + self.data_text + " " + self.visual_odometry.text + '.csv', index=False)
             # print("=====================================================================================")
 
         self.end = time.time()
@@ -185,7 +214,8 @@ class Controller():
         cv2.putText(self.traj, ("time: " + self.time_final + " seconds"), (20, 750), cv2.FONT_HERSHEY_PLAIN, 1,
                     (255, 255, 255), 1, 8)
         if self.type_dataset == 1:
-            cv2.imwrite('kitti' + self.visual_odometry.text + ".png", self.traj)
+            pass
+            # cv2.imwrite('test_data/' + self.visual_odometry.text + ".png", self.traj)
         if self.type_dataset == 2:
             cv2.imwrite('realsense ' + self.visual_odometry.text + ".png", self.traj)
         elif self.type_dataset == 3:
@@ -206,9 +236,6 @@ class Controller():
         self.truepose_x.append(pose_1)
         self.truepose_y.append(pose_2)
         self.truepose_z.append(pose_3)
-
-        # print(self.predict_z)
-        # print(self.truepose_z)
 
         MSE_x = np.square(np.subtract(self.truepose_x, self.predict_x)).mean()
         MSE_y = np.square(np.subtract(self.truepose_y, self.predict_y)).mean()
